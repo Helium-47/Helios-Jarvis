@@ -22,8 +22,7 @@
             brandLightGrey: '#e2e8f0',
             brandGrey: '#94a3b8',
             amberAccent: '#f59e0b',
-            cyanAccent: '#06b6d4',
-            redAccent: '#ef4444'
+            cyanAccent: '#06b6d4'
           },
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
@@ -80,8 +79,8 @@
       top: -10%;
       left: 50%;
       transform: translateX(-50%);
-      width: 800px;
-      height: 800px;
+      width: 900px;
+      height: 900px;
       background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, rgba(6, 182, 212, 0.03) 40%, transparent 70%);
       pointer-events: none;
     }
@@ -168,7 +167,6 @@
       return weather;
     }
 
-    // ─── High-Tech Cybernetic Holographic JARVIS Core ───
     function Jarvis3DCore({ isListening, isSpeaking, audioLevel, currentMode }) {
       const mountRef = useRef(null);
       const stateRef = useRef({ isListening, isSpeaking, audioLevel, currentMode });
@@ -181,12 +179,12 @@
         const container = mountRef.current;
         if (!container) return;
 
-        let width = container.clientWidth || 400;
-        let height = container.clientHeight || 340;
+        let width = container.clientWidth || 500;
+        let height = container.clientHeight || 450;
 
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-        camera.position.set(0, 0, 5);
+        camera.position.set(0, 0, 5.2);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(width, height);
@@ -196,8 +194,7 @@
         const jarvisGroup = new THREE.Group();
         scene.add(jarvisGroup);
 
-        // 1. Particle Sphere Grid Core
-        const particleCount = 700;
+        const particleCount = 1000;
         const particleGeo = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
 
@@ -206,7 +203,7 @@
           const v = Math.random();
           const theta = u * 2.0 * Math.PI;
           const phi = Math.acos(2.0 * v - 1.0);
-          const r = 1.0;
+          const r = 1.35;
 
           positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
           positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
@@ -216,27 +213,25 @@
         particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         const particleMat = new THREE.PointsMaterial({
           color: 0xf59e0b,
-          size: 0.035,
+          size: 0.038,
           transparent: true,
           opacity: 0.85
         });
         const particleSphere = new THREE.Points(particleGeo, particleMat);
         jarvisGroup.add(particleSphere);
 
-        // 2. High-Tech Dual Arc Reactor Rings
-        const ring1Geo = new THREE.TorusGeometry(1.4, 0.012, 16, 100);
+        const ring1Geo = new THREE.TorusGeometry(1.85, 0.014, 16, 100);
         const ring1Mat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true });
         const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
         jarvisGroup.add(ring1);
 
-        const ring2Geo = new THREE.TorusGeometry(1.7, 0.008, 16, 100);
+        const ring2Geo = new THREE.TorusGeometry(2.15, 0.009, 16, 100);
         const ring2Mat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.6 });
         const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
         ring2.rotation.x = Math.PI / 2.5;
         jarvisGroup.add(ring2);
 
-        // 3. Central Inner Pulsing Energy Core
-        const coreGeo = new THREE.IcosahedronGeometry(0.4, 2);
+        const coreGeo = new THREE.IcosahedronGeometry(0.55, 2);
         const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
         const coreMesh = new THREE.Mesh(coreGeo, coreMat);
         jarvisGroup.add(coreMesh);
@@ -252,19 +247,16 @@
           let hexColor = 0xf59e0b;
           let ringColor = 0x06b6d4;
 
-          if (mode === 'STEALTH') {
+          if (mode === 'FOCUS') {
             hexColor = 0x475569;
             ringColor = 0x64748b;
-          } else if (mode === 'OVERDRIVE') {
-            hexColor = 0xef4444;
-            ringColor = 0xd97706;
           }
 
           particleMat.color.setHex(hexColor);
           ring2Mat.color.setHex(hexColor);
           ring1Mat.color.setHex(ringColor);
 
-          const speedMult = mode === 'OVERDRIVE' ? 2.2 : mode === 'STEALTH' ? 0.4 : 1.0;
+          const speedMult = mode === 'FOCUS' ? 0.3 : 1.0;
           const talkMult = activeSpeak ? 2.5 : activeListen ? 1.6 : 1.0;
 
           jarvisGroup.rotation.y = t * 0.3 * speedMult * talkMult;
@@ -303,7 +295,7 @@
         };
       }, []);
 
-      return <div ref={mountRef} className="w-full h-full min-h-[340px] flex items-center justify-center" />;
+      return <div ref={mountRef} className="w-full h-full min-h-[420px] flex items-center justify-center" />;
     }
 
     function App() {
@@ -318,51 +310,48 @@
       const [systemStatus, setSystemStatus] = useState('ONLINE & READY');
       const [systemMode, setSystemMode] = useState('STANDARD');
 
-      // Command Terminal Engine (Replaces Scratchpad)
-      const [cliInput, setCliInput] = useState('');
-      const [cliLogs, setCliLogs] = useState([
-        { id: 1, type: 'sys', text: 'Helios Command Terminal initialized.' },
-        { id: 2, type: 'sys', text: 'Type "help" for executable system functions.' }
-      ]);
+      const [cpuLoad, setCpuLoad] = useState(12);
+      const [memoryLoad, setMemoryLoad] = useState(28);
 
-      const [cpuLoad, setCpuLoad] = useState(18);
-      const [memoryLoad, setMemoryLoad] = useState(34);
-
-      useEffect(() => {
-        const interval = setInterval(() => {
-          const cpuBase = systemMode === 'OVERDRIVE' ? 75 : systemMode === 'STEALTH' ? 8 : 18;
-          const ramBase = systemMode === 'OVERDRIVE' ? 68 : systemMode === 'STEALTH' ? 22 : 34;
-          setCpuLoad(Math.floor(cpuBase + Math.random() * 12));
-          setMemoryLoad(Math.floor(ramBase + Math.random() * 6));
-        }, 2000);
-        return () => clearInterval(interval);
-      }, [systemMode]);
-
-      const [links, setLinks] = useState(() => {
-        const stored = localStorage.getItem('jarvis_links_v4');
+      const [directives, setDirectives] = useState(() => {
+        const stored = localStorage.getItem('jarvis_directives_v1');
         if (stored) {
           try { return JSON.parse(stored); } catch (e) {}
         }
         return [
-          { id: 1, title: 'GitHub HQ', url: 'https://github.com', tag: 'DEV' },
-          { id: 2, title: 'Vercel Console', url: 'https://vercel.com', tag: 'DEPLOY' },
-          { id: 3, title: 'OpenAI Docs', url: 'https://platform.openai.com', tag: 'INTELLIGENCE' },
-          { id: 4, title: 'BBC News', url: 'https://www.bbc.co.uk/news', tag: 'MEDIA' }
+          "What's the weather?",
+          "What time is it?",
+          "System diagnostics",
+          "Open Gemini",
+          "Open Google"
         ];
       });
+      const [newDirectiveInput, setNewDirectiveInput] = useState('');
 
-      const [isModalOpen, setIsModalOpen] = useState(false);
-      const [inputTitle, setInputTitle] = useState('');
-      const [inputUrl, setInputUrl] = useState('');
-      const [inputTag, setInputTag] = useState('');
-
-      const recognitionRef = useRef(null);
-      const synthRef = useRef(window.speechSynthesis);
-      const speechActiveRef = useRef(false);
+      const [webAutomations, setWebAutomations] = useState([
+        { keyword: 'gemini', name: 'Google Gemini', url: 'https://gemini.google.com' },
+        { keyword: 'google', name: 'Google Search', url: 'https://www.google.com' },
+        { keyword: 'github', name: 'GitHub HQ', url: 'https://github.com' },
+        { keyword: 'youtube', name: 'YouTube', url: 'https://www.youtube.com' }
+      ]);
 
       useEffect(() => {
-        localStorage.setItem('jarvis_links_v4', JSON.stringify(links));
-      }, [links]);
+        localStorage.setItem('jarvis_directives_v1', JSON.stringify(directives));
+      }, [directives]);
+
+      useEffect(() => {
+        const interval = setInterval(() => {
+          const cpuBase = systemMode === 'FOCUS' ? 5 : 14;
+          const ramBase = systemMode === 'FOCUS' ? 18 : 28;
+          setCpuLoad(Math.floor(cpuBase + Math.random() * 8));
+          setMemoryLoad(Math.floor(ramBase + Math.random() * 5));
+        }, 2000);
+        return () => clearInterval(interval);
+      }, [systemMode]);
+
+      const synthRef = useRef(window.speechSynthesis);
+      const speechActiveRef = useRef(false);
+      const recognitionRef = useRef(null);
 
       const speakResponse = useCallback((text) => {
         if (!text) return;
@@ -374,14 +363,21 @@
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-GB';
         utterance.rate = 0.95;
-        utterance.pitch = 1.0;
+        utterance.pitch = 0.9;
 
         const voices = synthRef.current.getVoices();
-        const preferredVoice = voices.find(v => 
-          v.lang === 'en-GB' && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Oliver') || v.name.includes('George') || v.name.includes('Daniel'))
+        const naturalMaleBritish = voices.find(v => 
+          v.lang === 'en-GB' && (
+            v.name.includes('George') || 
+            v.name.includes('Oliver') || 
+            v.name.includes('Daniel') || 
+            v.name.includes('Male') || 
+            v.name.includes('Natural') ||
+            v.name.includes('United Kingdom')
+          )
         ) || voices.find(v => v.lang === 'en-GB');
 
-        if (preferredVoice) utterance.voice = preferredVoice;
+        if (naturalMaleBritish) utterance.voice = naturalMaleBritish;
 
         utterance.onend = () => {
           speechActiveRef.current = false;
@@ -405,48 +401,25 @@
         synthRef.current.speak(utterance);
       }, []);
 
-      const executeSystemCommand = useCallback((cmdRaw) => {
-        const cmd = cmdRaw.trim().toLowerCase();
-        if (!cmd) return;
-
-        setCliLogs(prev => [...prev, { id: Date.now(), type: 'user', text: `> ${cmdRaw}` }]);
-
-        if (cmd === 'help') {
-          setCliLogs(prev => [...prev, { id: Date.now() + 1, type: 'sys', text: 'Commands: mode standard | mode stealth | mode overdrive | weather | clear | info' }]);
-        } else if (cmd === 'mode standard') {
-          setSystemMode('STANDARD');
-          speakResponse('Standard mode active.');
-          setCliLogs(prev => [...prev, { id: Date.now() + 1, type: 'out', text: 'System mode set to STANDARD.' }]);
-        } else if (cmd === 'mode stealth') {
-          setSystemMode('STEALTH');
-          speakResponse('Stealth mode active.');
-          setCliLogs(prev => [...prev, { id: Date.now() + 1, type: 'out', text: 'System mode set to STEALTH.' }]);
-        } else if (cmd === 'mode overdrive') {
-          setSystemMode('OVERDRIVE');
-          speakResponse('Overdrive mode active.');
-          setCliLogs(prev => [...prev, { id: Date.now() + 1, type: 'out', text: 'System mode set to OVERDRIVE.' }]);
-        } else if (cmd === 'clear') {
-          setCliLogs([]);
-        } else if (cmd === 'weather') {
-          const resp = weather.loading ? 'Syncing weather telemetry...' : `Local weather is ${weather.temp}°C with ${weather.condition}.`;
-          speakResponse(resp);
-          setCliLogs(prev => [...prev, { id: Date.now() + 1, type: 'out', text: resp }]);
-        } else {
-          setCliLogs(prev => [...prev, { id: Date.now() + 1, type: 'err', text: `Unknown command: "${cmdRaw}". Type "help" for options.` }]);
-        }
-      }, [speakResponse, weather]);
-
-      const handleCliSubmit = (e) => {
-        e.preventDefault();
-        executeSystemCommand(cliInput);
-        setCliInput('');
-      };
-
       const handleVoiceCommand = useCallback((rawText) => {
         const text = (rawText || '').toLowerCase().trim();
         if (!text) {
           speakResponse('I beg your pardon, sir. I did not catch that.');
           return;
+        }
+
+        if (text.includes('open ') || text.includes('launch ')) {
+          const match = webAutomations.find(auto => text.includes(auto.keyword));
+          if (match) {
+            speakResponse(`Opening ${match.name} in a new tab now, sir.`);
+            window.open(match.url, '_blank');
+            return;
+          } else {
+            const target = text.replace('open ', '').replace('launch ', '').trim();
+            speakResponse(`Opening target website for ${target}, sir.`);
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(target)}`, '_blank');
+            return;
+          }
         }
 
         if (text.includes('weather') || text.includes('temperature')) {
@@ -466,15 +439,9 @@
           return;
         }
 
-        if (text.includes('stealth')) {
-          setSystemMode('STEALTH');
-          speakResponse('Stealth protocols initiated, sir. Power consumption minimised.');
-          return;
-        }
-
-        if (text.includes('overdrive')) {
-          setSystemMode('OVERDRIVE');
-          speakResponse('Overdrive engaged. Performance parameters operating at full capacity.');
+        if (text.includes('focus')) {
+          setSystemMode('FOCUS');
+          speakResponse('Focus mode activated, sir. Visual distractions minimised.');
           return;
         }
 
@@ -485,12 +452,12 @@
         }
 
         if (text.includes('status') || text.includes('diagnostics')) {
-          speakResponse(`All primary systems operational, sir. CPU at ${cpuLoad} percent, memory allocation at ${memoryLoad} percent.`);
+          speakResponse(`All primary systems operational, sir. CPU load at ${cpuLoad} percent, memory allocation at ${memoryLoad} percent.`);
           return;
         }
 
-        speakResponse(`Understood, sir. Command registered: "${rawText}".`);
-      }, [speakResponse, weather, cpuLoad, memoryLoad]);
+        speakResponse(`Understood, sir. Executing command: "${rawText}".`);
+      }, [speakResponse, weather, cpuLoad, memoryLoad, webAutomations]);
 
       const startListening = useCallback(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -557,43 +524,31 @@
         else startListening();
       }, [isListening, startListening, stopListening]);
 
-      const handleAddLink = (e) => {
+      const handleAddDirective = (e) => {
         e.preventDefault();
-        if (!inputTitle || !inputUrl) return;
-        let formatted = inputUrl.trim();
-        if (!/^https?:\/\//i.test(formatted)) {
-          formatted = 'https://' + formatted;
-        }
-        setLinks([...links, {
-          id: Date.now(),
-          title: inputTitle.trim(),
-          url: formatted,
-          tag: (inputTag.trim() || 'LINK').toUpperCase()
-        }]);
-        setInputTitle('');
-        setInputUrl('');
-        setInputTag('');
-        setIsModalOpen(false);
+        if (!newDirectiveInput.trim()) return;
+        setDirectives([...directives, newDirectiveInput.trim()]);
+        setNewDirectiveInput('');
       };
 
-      const handleRemoveLink = (id, e) => {
-        e.preventDefault();
+      const handleRemoveDirective = (index, e) => {
         e.stopPropagation();
-        setLinks(links.filter(l => l.id !== id));
+        setDirectives(directives.filter((_, i) => i !== index));
       };
+
+      const focusClass = systemMode === 'FOCUS';
 
       return (
-        <div className="min-h-screen w-full bg-obsidian text-slate-100 flex flex-col justify-between relative overflow-hidden p-6 md:p-10">
+        <div className={`min-h-screen w-full bg-obsidian text-slate-100 flex flex-col justify-between relative overflow-hidden p-6 md:p-10 ${focusClass ? 'opacity-95' : ''}`}>
           
           <div className="ambient-glow" />
 
-          {/* HEADER WITH LOGO */}
-          <header className="relative z-10 flex items-center justify-between pb-6 border-b border-slate-800/80 mb-8">
+          <header className={`relative z-10 flex items-center justify-between pb-6 border-b ${focusClass ? 'border-slate-800' : 'border-slate-800/80'} mb-8 transition-colors duration-300`}>
             <div className="flex items-center gap-3.5">
               <div className="relative w-8 h-8 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full border-2 border-amberAccent/40 animate-ping" />
-                <div className="w-6 h-6 rounded-full border-2 border-amberAccent flex items-center justify-center bg-slate-900">
-                  <div className="w-2.5 h-2.5 rounded-full bg-amberAccent" />
+                <div className={`absolute inset-0 rounded-full border-2 ${focusClass ? 'border-slate-600' : 'border-amberAccent/40'} animate-ping`} />
+                <div className={`w-6 h-6 rounded-full border-2 ${focusClass ? 'border-slate-500' : 'border-amberAccent'} flex items-center justify-center bg-slate-900`}>
+                  <div className={`w-2.5 h-2.5 rounded-full ${focusClass ? 'bg-slate-500' : 'bg-amberAccent'}`} />
                 </div>
               </div>
               <h1 className="font-brand text-2xl md:text-3xl font-bold tracking-widest text-brandWhite">
@@ -602,12 +557,10 @@
             </div>
 
             <div className="flex items-center gap-6">
-              {/* Functional System Modes */}
               <div className="hidden sm:flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-[11px] font-mono">
                 {[
                   { id: 'STANDARD', label: 'STANDARD' },
-                  { id: 'STEALTH', label: 'STEALTH' },
-                  { id: 'OVERDRIVE', label: 'OVERDRIVE' }
+                  { id: 'FOCUS', label: 'FOCUS' }
                 ].map(m => (
                   <button
                     key={m.id}
@@ -615,12 +568,10 @@
                       setSystemMode(m.id);
                       speakResponse(`${m.label.toLowerCase()} mode activated, sir.`);
                     }}
-                    className={`px-3 py-1 rounded-lg transition-all ${
+                    className={`px-4 py-1.5 rounded-lg transition-all ${
                       systemMode === m.id 
-                        ? m.id === 'STEALTH' 
+                        ? m.id === 'FOCUS' 
                           ? 'bg-slate-700 text-white font-bold' 
-                          : m.id === 'OVERDRIVE' 
-                          ? 'bg-redAccent text-white font-bold' 
                           : 'bg-amberAccent text-obsidian font-bold'
                         : 'text-slate-400 hover:text-white'
                     }`}
@@ -632,7 +583,7 @@
 
               <div className="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-slate-300 bg-slate-900/80 border border-slate-700/60 flex items-center gap-2.5">
                 <span className={`w-2 h-2 rounded-full ${
-                  systemMode === 'STEALTH' ? 'bg-slate-500' : systemMode === 'OVERDRIVE' ? 'bg-redAccent animate-ping' : isListening ? 'bg-amberAccent animate-ping' : 'bg-emerald-400'
+                  focusClass ? 'bg-slate-500' : isListening ? 'bg-amberAccent animate-ping' : 'bg-emerald-400'
                 }`} />
                 {systemStatus}
               </div>
@@ -643,13 +594,11 @@
             </div>
           </header>
 
-          {/* MAIN CONTENT */}
           <main className="relative z-10 grid grid-cols-12 gap-8 my-auto items-stretch">
             
-            {/* LEFT COLUMN */}
             <div className="col-span-12 lg:col-span-3 flex flex-col justify-between gap-6">
               
-              <div className="glass-card rounded-2xl p-6 border-l-4 border-l-amberAccent">
+              <div className={`glass-card rounded-2xl p-6 border-l-4 ${focusClass ? 'border-l-slate-600' : 'border-l-amberAccent'}`}>
                 <div className="text-[11px] font-brand uppercase tracking-widest text-brandGrey mb-2">TELEMETRY & TIME</div>
                 <div className="text-sm font-semibold text-brandLightGrey mb-1">{weather.location}</div>
                 <div className="text-3xl font-extrabold font-brand text-brandWhite tracking-wider">
@@ -657,7 +606,7 @@
                 </div>
               </div>
 
-              <div className="glass-card rounded-2xl p-6 border-l-4 border-l-amberAccent">
+              <div className={`glass-card rounded-2xl p-6 border-l-4 ${focusClass ? 'border-l-slate-600' : 'border-l-amberAccent'}`}>
                 <div className="text-[11px] font-brand uppercase tracking-widest text-brandGrey mb-3">ENVIRONMENTAL FEED</div>
                 {weather.loading ? (
                   <div className="text-slate-500 text-xs animate-pulse">Syncing satellite telemetry…</div>
@@ -677,37 +626,59 @@
                 )}
               </div>
 
-              <div className="glass-card rounded-2xl p-6 flex-1 flex flex-col justify-center">
-                <div className="text-[11px] font-brand uppercase tracking-widest text-brandGrey mb-4">DIRECTIVE COMMANDS</div>
-                <div className="flex flex-col gap-3">
-                  {[
-                    "What's the weather?",
-                    'What time is it?',
-                    'System diagnostics',
-                    'Engage stealth mode'
-                  ].map(cmd => (
-                    <button
-                      key={cmd}
-                      onClick={() => {
-                        synthRef.current.cancel();
-                        setTranscript(cmd);
-                        handleVoiceCommand(cmd);
-                      }}
-                      className="w-full text-left px-4 py-3 rounded-xl text-xs font-medium text-slate-300 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between group"
-                    >
-                      <span>{cmd}</span>
-                      <span className="text-amberAccent opacity-0 group-hover:opacity-100 transition-opacity">→</span>
-                    </button>
-                  ))}
+              <div className="glass-card rounded-2xl p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <div className="text-[11px] font-brand uppercase tracking-widest text-brandGrey mb-4 flex justify-between items-center">
+                    <span>DIRECTIVE COMMANDS</span>
+                    <span className="text-[9px] text-slate-500 font-mono">CUSTOMIZABLE</span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2.5 max-h-[220px] overflow-y-auto pr-1">
+                    {directives.map((cmd, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          synthRef.current.cancel();
+                          setTranscript(cmd);
+                          handleVoiceCommand(cmd);
+                        }}
+                        className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-300 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between group cursor-pointer"
+                      >
+                        <span className="truncate pr-2">{cmd}</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => handleRemoveDirective(idx, e)}
+                            className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition-opacity text-xs"
+                            title="Remove Directive"
+                          >
+                            ✕
+                          </button>
+                          <span className={`${focusClass ? 'text-slate-400' : 'text-amberAccent'} opacity-0 group-hover:opacity-100 transition-opacity`}>→</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
+                <form onSubmit={handleAddDirective} className="flex gap-2 mt-4 pt-3 border-t border-slate-800">
+                  <input
+                    type="text"
+                    value={newDirectiveInput}
+                    onChange={(e) => setNewDirectiveInput(e.target.value)}
+                    placeholder="Add custom command..."
+                    className={`flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 font-sans focus:outline-none ${focusClass ? 'focus:border-slate-600' : 'focus:border-amberAccent'}`}
+                  />
+                  <button type="submit" className={`px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold ${focusClass ? 'text-slate-300' : 'text-amberAccent'} border border-slate-700`}>
+                    + ADD
+                  </button>
+                </form>
               </div>
 
             </div>
 
-            {/* CENTER COLUMN: REMADE JARVIS CORE */}
             <div className="col-span-12 lg:col-span-6 flex flex-col items-center justify-between gap-6 py-2">
               
-              <div className="w-full h-[360px] relative flex items-center justify-center">
+              <div className="w-full h-[420px] relative flex items-center justify-center">
                 <Jarvis3DCore 
                   isListening={isListening} 
                   isSpeaking={isSpeaking} 
@@ -716,133 +687,90 @@
                 />
               </div>
 
-              <button
-                onClick={toggleMic}
-                className={`core-btn px-10 py-4 rounded-full font-brand text-xs font-bold tracking-widest flex items-center gap-3.5 ${
-                  isListening
-                    ? 'bg-amberAccent text-obsidian shadow-[0_0_30px_rgba(245,158,11,0.5)]'
-                    : 'bg-slate-900 border border-slate-700 text-brandWhite hover:border-amberAccent'
-                }`}
-              >
-                <span className={`w-3 h-3 rounded-full ${isListening ? 'bg-obsidian animate-ping' : 'bg-amberAccent'}`} />
-                {isListening ? 'HALT VOICE INPUT' : "INITIALIZE HELIOS' JARVIS"}
-              </button>
+              <div className="pt-4 flex flex-col items-center gap-4 w-full">
+                <button
+                  onClick={toggleMic}
+                  className={`core-btn px-10 py-4 rounded-full font-brand text-xs font-bold tracking-widest flex items-center gap-3.5 ${
+                    isListening
+                      ? focusClass ? 'bg-slate-600 text-obsidian shadow-[0_0_30px_rgba(100,116,139,0.5)]' : 'bg-amberAccent text-obsidian shadow-[0_0_30px_rgba(245,158,11,0.5)]'
+                      : 'bg-slate-900 border border-slate-700 text-brandWhite hover:border-amberAccent'
+                  }`}
+                >
+                  <span className={`w-3 h-3 rounded-full ${isListening ? 'bg-obsidian animate-ping' : focusClass ? 'bg-slate-400' : 'bg-amberAccent'}`} />
+                  {isListening ? 'HALT VOICE INPUT' : "INITIALIZE HELIOS' JARVIS"}
+                </button>
 
-              <div className="w-full max-w-md glass-card rounded-2xl p-5 border-t-2 border-t-amberAccent min-h-[90px] flex flex-col justify-center">
-                <div className="text-[10px] font-brand tracking-widest text-brandGrey mb-1.5 uppercase text-center">COMMUNICATION FEED</div>
-                <div className="text-xs font-mono text-brandWhite text-center">
-                  {transcript ? `> ${transcript}` : <span className="text-slate-600">Awaiting voice command input…</span>}
-                </div>
-                {jarvisResponse && (
-                  <div className="mt-2.5 pt-2 border-t border-slate-800 text-xs font-mono text-amberAccent text-center">
-                    JARVIS: {jarvisResponse}
+                <div className={`w-full max-w-md glass-card rounded-2xl p-5 border-t-2 ${focusClass ? 'border-t-slate-600' : 'border-t-amberAccent'} min-h-[90px] flex flex-col justify-center`}>
+                  <div className="text-[10px] font-brand tracking-widest text-brandGrey mb-1.5 uppercase text-center">COMMUNICATION FEED</div>
+                  <div className="text-xs font-mono text-brandWhite text-center">
+                    {transcript ? `> ${transcript}` : <span className="text-slate-600">Awaiting voice command input…</span>}
                   </div>
-                )}
+                  {jarvisResponse && (
+                    <div className={`text-[11px] font-mono mt-2 text-center ${focusClass ? 'text-slate-400' : 'text-amberAccent/90'}`}>
+                      JARVIS: "{jarvisResponse}"
+                    </div>
+                  )}
+                </div>
               </div>
 
             </div>
 
-            {/* RIGHT COLUMN */}
-            <div className="col-span-12 lg:col-span-3 flex flex-col gap-6">
+            <div className="col-span-12 lg:col-span-3 flex flex-col justify-between gap-6">
               
-              <div className="glass-card rounded-2xl p-6 flex-1 flex flex-col justify-between border-r-4 border-r-amberAccent">
-                <div>
-                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-                    <span className="text-[11px] font-brand uppercase tracking-widest text-brandGrey">ACTION LAUNCHER</span>
-                    <button 
-                      onClick={() => setIsModalOpen(true)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-semibold text-brandWhite transition-all"
-                    >
-                      + ADD LINK
-                    </button>
+              <div className={`glass-card rounded-2xl p-6 border-l-4 ${focusClass ? 'border-l-slate-600' : 'border-l-amberAccent'}`}>
+                <div className="text-[11px] font-brand uppercase tracking-widest text-brandGrey mb-4">SYSTEM PERFORMANCE</div>
+                
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                      <span className="text-slate-400">CPU ALLOCATION</span>
+                      <span className="text-brandWhite font-semibold">{cpuLoad}%</span>
+                    </div>
+                    <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                      <div className={`h-full ${focusClass ? 'bg-slate-500' : 'bg-amberAccent'} transition-all duration-500`} style={{ width: `${cpuLoad}%` }} />
+                    </div>
                   </div>
 
-                  <div className="flex flex-col gap-3 overflow-y-auto max-h-[260px] pt-2 pr-1">
-                    {links.map(link => (
+                  <div>
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                      <span className="text-slate-400">MEMORY ALLOCATION</span>
+                      <span className="text-brandWhite font-semibold">{memoryLoad}%</span>
+                    </div>
+                    <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                      <div className="h-full bg-cyanAccent transition-all duration-500" style={{ width: `${memoryLoad}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass-card rounded-2xl p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <div className="text-[11px] font-brand uppercase tracking-widest text-brandGrey mb-3 flex justify-between items-center">
+                    <span>WEB AUTOMATOR</span>
+                    <span className="text-[9px] text-slate-500 font-mono">VOICE/CLICK</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 mb-3">
+                    Say "Open [keyword]" or click shortcuts below to launch instantly:
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {webAutomations.map((auto, idx) => (
                       <a
-                        key={link.id}
-                        href={link.url}
+                        key={idx}
+                        href={auto.url}
                         target="_blank"
-                        rel="noopener noreferrer"
-                        className="launcher-item flex items-center justify-between px-4 py-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80 group"
+                        rel="noreferrer"
+                        className="launcher-item px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-center text-left"
                       >
-                        <div>
-                          <div className="text-xs font-semibold text-brandWhite group-hover:text-amberAccent transition-colors">
-                            {link.title}
-                          </div>
-                          <div className="text-[9px] font-brand text-slate-500 tracking-wider mt-0.5">{link.tag}</div>
-                        </div>
-                        
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={(e) => handleRemoveLink(link.id, e)}
-                            className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition-all text-xs px-1"
-                            title="Remove Shortcut"
-                          >
-                            ✕
-                          </button>
-                          <span className="text-slate-600 group-hover:text-amberAccent text-xs">↗</span>
-                        </div>
+                        <div className="text-xs font-semibold text-slate-200 truncate">{auto.name}</div>
+                        <div className="text-[9px] font-mono text-slate-500 mt-0.5">say: "{auto.keyword}"</div>
                       </a>
                     ))}
                   </div>
                 </div>
-              </div>
 
-              {/* INNOVATIVE REPLACEMENT: Command Terminal Engine */}
-              <div className="glass-card rounded-2xl p-4 border-l-2 border-l-cyanAccent">
-                <div className="text-[10px] font-brand uppercase tracking-widest text-brandGrey mb-2 flex justify-between">
-                  <span>COMMAND TERMINAL</span>
-                  <span className="text-cyanAccent font-mono">CLI ACTIVE</span>
-                </div>
-                
-                <div className="w-full h-20 bg-slate-950/90 border border-slate-800 rounded-xl p-2.5 text-[11px] font-mono overflow-y-auto flex flex-col gap-1 mb-2">
-                  {cliLogs.map(log => (
-                    <div key={log.id} className={
-                      log.type === 'user' ? 'text-amberAccent' :
-                      log.type === 'err' ? 'text-rose-400' :
-                      log.type === 'out' ? 'text-cyanAccent' : 'text-slate-400'
-                    }>
-                      {log.text}
-                    </div>
-                  ))}
-                </div>
-
-                <form onSubmit={handleCliSubmit} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={cliInput}
-                    onChange={(e) => setCliInput(e.target.value)}
-                    placeholder='Type "help" or command...'
-                    className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyanAccent"
-                  />
-                  <button type="submit" className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-cyanAccent border border-slate-700">
-                    EXEC
-                  </button>
-                </form>
-              </div>
-
-              <div className="glass-card rounded-2xl p-4 border-l-2 border-l-slate-600">
-                <div className="text-[10px] font-brand uppercase tracking-widest text-brandGrey mb-2">HARDWARE MONITOR</div>
-                <div className="space-y-2 text-xs">
-                  <div>
-                    <div className="flex justify-between text-[11px] text-slate-400 mb-1">
-                      <span>CPU ALLOCATION</span>
-                      <span className="font-mono text-amberAccent">{cpuLoad}%</span>
-                    </div>
-                    <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-amberAccent h-1.5 transition-all duration-500" style={{ width: `${cpuLoad}%` }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-[11px] text-slate-400 mb-1">
-                      <span>RAM ALLOCATION</span>
-                      <span className="font-mono text-cyanAccent">{memoryLoad}%</span>
-                    </div>
-                    <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-cyanAccent h-1.5 transition-all duration-500" style={{ width: `${memoryLoad}%` }}></div>
-                    </div>
-                  </div>
+                <div className="mt-4 pt-3 border-t border-slate-800 text-[10px] text-slate-500 font-mono text-center">
+                  SECURE KERNEL v5.4.2 ACTIVE
                 </div>
               </div>
 
@@ -850,81 +778,21 @@
 
           </main>
 
-          <footer className="relative z-10 pt-6 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-500 mt-8">
-            <div>HELIOS CORE SYSTEM V3.3</div>
-            <div>BRITISH ENGLISH VOICE PARSER ACTIVE</div>
-          </footer>
-
-          {isModalOpen && (
-            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-              <div className="glass-card max-w-md w-full rounded-2xl p-6 border border-slate-700">
-                <div className="flex items-center justify-between mb-5 border-b border-slate-800 pb-3">
-                  <h3 className="font-brand text-sm font-bold text-brandWhite">ADD NEW SHORTCUT</h3>
-                  <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-brandWhite">✕</button>
-                </div>
-                
-                <form onSubmit={handleAddLink} className="flex flex-col gap-4 text-xs">
-                  <div>
-                    <label className="block text-slate-400 mb-1.5 font-medium">TITLE</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. BBC Sport" 
-                      value={inputTitle}
-                      onChange={(e) => setInputTitle(e.target.value)}
-                      required
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amberAccent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 mb-1.5 font-medium">URL</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. bbc.co.uk/sport" 
-                      value={inputUrl}
-                      onChange={(e) => setInputUrl(e.target.value)}
-                      required
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amberAccent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 mb-1.5 font-medium">TAG / CATEGORY</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. SPORT" 
-                      value={inputTag}
-                      onChange={(e) => setInputTag(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amberAccent"
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-3 mt-3">
-                    <button 
-                      type="button" 
-                      onClick={() => setIsModalOpen(false)}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700"
-                    >
-                      CANCEL
-                    </button>
-                    <button 
-                      type="submit" 
-                      className="px-5 py-2.5 rounded-xl bg-amberAccent text-obsidian font-bold hover:bg-amber-400 transition-all"
-                    >
-                      SAVE SHORTCUT
-                    </button>
-                  </div>
-                </form>
-              </div>
+          <footer className="relative z-10 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-brandGrey gap-4">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amberAccent animate-pulse" />
+              <span>HELIOS' JARVIS NEURAL NETWORK SECURED</span>
             </div>
-          )}
+            <div className="font-mono text-[11px] text-slate-500">
+              EN-GB SPEECH SYNTHESIS & RECOGNITION ONLINE
+            </div>
+          </footer>
 
         </div>
       );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
