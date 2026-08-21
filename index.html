@@ -283,7 +283,6 @@
       const [jarvisResponse, setJarvisResponse] = useState('');
       const [systemStatus, setSystemStatus] = useState('OFFLINE');
       const [systemMode, setSystemMode] = useState('STANDARD');
-      const [pendingAction, setPendingAction] = useState(null);
 
       const [cpuLoad, setCpuLoad] = useState(14);
       const [memoryLoad, setMemoryLoad] = useState(29);
@@ -319,11 +318,10 @@
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-GB';
-        utterance.rate = 0.90; // Slower cadence to sound less robotic and more grounded
-        utterance.pitch = 0.72; // Deep, natural chest-resonance tone
+        utterance.rate = 0.90;
+        utterance.pitch = 0.72;
 
         const voices = synthRef.current.getVoices();
-        // Look for natural offline or high quality voices
         const britishMale = voices.find(v => 
           v.lang === 'en-GB' && (
             v.name.includes('Google UK English Male') || 
@@ -361,21 +359,6 @@
 
       const executeDirective = useCallback((cmd) => {
         const action = cmd.action;
-        const label = cmd.label.toLowerCase();
-
-        if (pendingAction) {
-          if (label.includes('yes') || label.includes('confirm')) {
-            const targetAction = pendingAction;
-            setPendingAction(null);
-            speakResponse(`Confirmed. Opening ${targetAction.name}.`, () => {
-              window.open(targetAction.url, '_blank');
-            });
-          } else if (label.includes('no') || label.includes('cancel')) {
-            setPendingAction(null);
-            speakResponse('Action cancelled.');
-          }
-          return;
-        }
 
         if (action === 'weather') {
           speakResponse(weather.loading ? 'Telemetry calibrating.' : `Temperature is ${weather.temp} degrees, ${weather.condition.toLowerCase()}.`);
@@ -383,40 +366,27 @@
           speakResponse(`Local time is ${new Date().toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true })}.`);
         } else if (action === 'diagnostics') {
           speakResponse(`All core sub-routines stable. CPU running at ${cpuLoad} percent.`);
-        } else if (action === 'gemini' || action === 'google') {
-          const target = webAutomations.find(w => w.keyword === action) || { name: action, url: cmd.url };
-          setPendingAction(target);
-          speakResponse(`Confirmation, open ${target.name}. Please say yes or no.`);
+        } else if (action === 'gemini' || action === 'google' || cmd.url) {
+          const targetUrl = cmd.url || (webAutomations.find(w => w.keyword === action)?.url);
+          const targetName = cmd.label || action;
+          speakResponse(`Opening ${targetName}.`, () => {
+            if (targetUrl) window.open(targetUrl, '_blank');
+          });
         } else {
           speakResponse("Directive executed.");
         }
-      }, [pendingAction, weather, cpuLoad, webAutomations, speakResponse]);
+      }, [weather, cpuLoad, webAutomations, speakResponse]);
 
       const handleVoiceCommand = useCallback((rawText) => {
         const text = (rawText || '').toLowerCase().trim();
         if (!text) return;
 
-        if (pendingAction) {
-          if (text.includes('yes') || text.includes('confirm')) {
-            const action = pendingAction;
-            setPendingAction(null);
-            speakResponse(`Confirmed. Opening ${action.name}.`, () => {
-              window.open(action.url, '_blank');
-            });
-          } else if (text.includes('no') || text.includes('cancel')) {
-            setPendingAction(null);
-            speakResponse('Action cancelled.');
-          } else {
-            speakResponse('Please confirm with yes or no.');
-          }
-          return;
-        }
-
         if (text.includes('open ')) {
           const match = webAutomations.find(a => text.includes(a.keyword));
           if (match) {
-            setPendingAction(match);
-            speakResponse(`Confirmation, open ${match.name}. Please say yes or no.`);
+            speakResponse(`Opening ${match.name}.`, () => {
+              window.open(match.url, '_blank');
+            });
             return;
           }
         }
@@ -432,7 +402,7 @@
         }
 
         speakResponse('Command processed.');
-      }, [pendingAction, webAutomations, weather, speakResponse]);
+      }, [webAutomations, weather, speakResponse]);
 
       const startListening = useCallback(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -450,6 +420,8 @@
         recognition.onstart = () => {
           setIsListening(true);
           setSystemStatus('LISTENING');
+          // Fresh activation wipes out previous transient memory buffer state cleanly
+          setTranscript('');
         };
 
         recognition.onresult = (e) => {
@@ -590,11 +562,11 @@
 
               <div className="pt-2 flex flex-col items-center gap-3 w-full">
                 <button
-                  onClick={isListening ? stopListening : initializeJarvis}
+                  onClick={isListening ? stopListening : startListening}
                   className="core-btn px-8 py-3.5 rounded-full font-brand text-xs font-bold tracking-widest flex items-center gap-3 bg-amberAccent text-obsidian shadow-[0_0_30px_rgba(245,158,11,0.4)]"
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-obsidian animate-ping" />
-                  {systemStatus === 'OFFLINE' ? "INITIALIZE HELIOS' JARVIS" : isListening ? "HALT VOICE INPUT" : "ACTIVATE VOICE LINK"}
+                  {isListening ? "HALT VOICE INPUT" : "OPEN MIC / NEW COMMAND"}
                 </button>
 
                 <div className="w-full max-w-md glass-card rounded-2xl p-4 border-t-2 border-t-amberAccent min-h-[75px] flex flex-col justify-center">
@@ -639,8 +611,9 @@
                       <button
                         key={idx}
                         onClick={() => {
-                          setPendingAction(item);
-                          speakResponse(`Confirmation, open ${item.name}. Please say yes or no.`);
+                          speakResponse(`Opening ${item.name}.`, () => {
+                            window.open(item.url, '_blank');
+                          });
                         }}
                         className="text-left bg-slate-900/60 hover:bg-slate-800 border border-slate-800 p-2 rounded text-xs transition group"
                       >
