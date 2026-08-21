@@ -26,7 +26,6 @@
       const [newUrl, setNewUrl] = React.useState('');
       const [inputCmd, setInputCmd] = React.useState('');
 
-      // British male voice synthesizer
       const speak = (text, callback) => {
         if (!('speechSynthesis' in window)) return;
         window.speechSynthesis.cancel();
@@ -42,7 +41,7 @@
           if (gbVoice) utterance.voice = gbVoice;
         }
 
-        utterance.pitch = 0.85; // Deep masculine tone
+        utterance.pitch = 0.85;
         utterance.rate = 1.0;
 
         if (callback) {
@@ -51,7 +50,6 @@
         window.speechSynthesis.speak(utterance);
       };
 
-      // Load voices when available
       React.useEffect(() => {
         if ('speechSynthesis' in window) {
           window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
@@ -83,7 +81,6 @@
           return;
         }
 
-        // Check against custom commands
         const matched = customCommands.find(c => cmd.includes(c.keyword.toLowerCase()));
         if (matched) {
           setPendingAction(matched);
@@ -162,6 +159,7 @@
                 <h2 className="text-xs font-mono text-slate-500 mb-6">CORE SYSTEM MATRIX</h2>
                 <div className="w-48 h-48 mx-auto rounded-full border border-amber-500/30 flex items-center justify-center relative shadow-[0_0_30px_rgba(245,158,11,0.1)]">
                   <div className="absolute inset-2 rounded-full border border-cyan-500/30 animate-spin" style={{animationDuration: '12s'}}></div>
+                  <div className="absolute inset-6 rounded-full border border-dashed border-amber-500/20 animate-spin" style={{animationDuration: '20s', animationDirection: 'reverse'}}></div>
                   <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center font-mono text-amber-400 text-xs">AI</div>
                 </div>
               </div>
