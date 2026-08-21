@@ -285,8 +285,17 @@
       const [systemMode, setSystemMode] = useState('STANDARD');
       const [pendingAction, setPendingAction] = useState(null);
 
-      const [cpuLoad, setCpuLoad] = useState(12);
-      const [memoryLoad, setMemoryLoad] = useState(28);
+      const [cpuLoad, setCpuLoad] = useState(14);
+      const [memoryLoad, setMemoryLoad] = useState(29);
+
+      const [directiveCommands, setDirectiveCommands] = useState([
+        { label: "What's the weather?", action: "weather" },
+        { label: "What time is it?", action: "time" },
+        { label: "System diagnostics", action: "diagnostics" },
+        { label: "Open Gemini", action: "gemini", url: "https://gemini.google.com" },
+        { label: "Open Google", action: "google", url: "https://www.google.com" }
+      ]);
+      const [newDirective, setNewDirective] = useState('');
 
       const [webAutomations, setWebAutomations] = useState([
         { keyword: 'gemini', name: 'Google Gemini', url: 'https://gemini.google.com' },
@@ -310,18 +319,18 @@
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-GB';
-        utterance.rate = 0.95;
-        utterance.pitch = 0.85; // Lower pitch for adult male tone
+        utterance.rate = 0.90; // Slower cadence to sound less robotic and more grounded
+        utterance.pitch = 0.72; // Deep, natural chest-resonance tone
 
         const voices = synthRef.current.getVoices();
+        // Look for natural offline or high quality voices
         const britishMale = voices.find(v => 
           v.lang === 'en-GB' && (
+            v.name.includes('Google UK English Male') || 
             v.name.includes('Daniel') || 
-            v.name.includes('George') || 
             v.name.includes('Oliver') || 
-            v.name.includes('Arthur') || 
-            v.name.includes('Ryan') ||
-            v.name.includes('Male')
+            v.name.includes('George') ||
+            v.name.includes('Arthur')
           )
         ) || voices.find(v => v.lang === 'en-GB');
 
@@ -344,35 +353,67 @@
             clearInterval(intervalId);
             return;
           }
-          setAudioLevel(0.2 + Math.random() * 0.8);
-        }, 80);
+          setAudioLevel(0.15 + Math.random() * 0.5);
+        }, 100);
 
         synthRef.current.speak(utterance);
       }, []);
+
+      const executeDirective = useCallback((cmd) => {
+        const action = cmd.action;
+        const label = cmd.label.toLowerCase();
+
+        if (pendingAction) {
+          if (label.includes('yes') || label.includes('confirm')) {
+            const targetAction = pendingAction;
+            setPendingAction(null);
+            speakResponse(`Confirmed. Opening ${targetAction.name}.`, () => {
+              window.open(targetAction.url, '_blank');
+            });
+          } else if (label.includes('no') || label.includes('cancel')) {
+            setPendingAction(null);
+            speakResponse('Action cancelled.');
+          }
+          return;
+        }
+
+        if (action === 'weather') {
+          speakResponse(weather.loading ? 'Telemetry calibrating.' : `Temperature is ${weather.temp} degrees, ${weather.condition.toLowerCase()}.`);
+        } else if (action === 'time') {
+          speakResponse(`Local time is ${new Date().toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true })}.`);
+        } else if (action === 'diagnostics') {
+          speakResponse(`All core sub-routines stable. CPU running at ${cpuLoad} percent.`);
+        } else if (action === 'gemini' || action === 'google') {
+          const target = webAutomations.find(w => w.keyword === action) || { name: action, url: cmd.url };
+          setPendingAction(target);
+          speakResponse(`Confirmation, open ${target.name}. Please say yes or no.`);
+        } else {
+          speakResponse("Directive executed.");
+        }
+      }, [pendingAction, weather, cpuLoad, webAutomations, speakResponse]);
 
       const handleVoiceCommand = useCallback((rawText) => {
         const text = (rawText || '').toLowerCase().trim();
         if (!text) return;
 
-        // Confirmation workflow handling
         if (pendingAction) {
-          if (text.includes('yes') || text.includes('confirm') || text.includes('proceed')) {
+          if (text.includes('yes') || text.includes('confirm')) {
             const action = pendingAction;
             setPendingAction(null);
-            speakResponse(`Executing ${action.name}.`, () => {
+            speakResponse(`Confirmed. Opening ${action.name}.`, () => {
               window.open(action.url, '_blank');
             });
-          } else if (text.includes('no') || text.includes('cancel') || text.includes('abort')) {
+          } else if (text.includes('no') || text.includes('cancel')) {
             setPendingAction(null);
-            speakResponse('Cancel action.');
+            speakResponse('Action cancelled.');
           } else {
-            speakResponse('Please respond with yes or no, sir.');
+            speakResponse('Please confirm with yes or no.');
           }
           return;
         }
 
-        if (text.includes('open ') || text.includes('launch ')) {
-          const match = webAutomations.find(auto => text.includes(auto.keyword));
+        if (text.includes('open ')) {
+          const match = webAutomations.find(a => text.includes(a.keyword));
           if (match) {
             setPendingAction(match);
             speakResponse(`Confirmation, open ${match.name}. Please say yes or no.`);
@@ -381,24 +422,21 @@
         }
 
         if (text.includes('weather')) {
-          speakResponse(weather.loading ? 'Weather telemetry is synchronising.' : `Current temperature is ${weather.temp} degrees with ${weather.condition.toLowerCase()}.`);
+          speakResponse(weather.loading ? 'Telemetry calibrating.' : `Temperature is ${weather.temp} degrees, ${weather.condition.toLowerCase()}.`);
           return;
         }
 
         if (text.includes('time')) {
-          speakResponse(`The time is precisely ${new Date().toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true })}, sir.`);
+          speakResponse(`Local time is ${new Date().toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true })}.`);
           return;
         }
 
-        speakResponse(`Understood, sir. Executing command.`);
+        speakResponse('Command processed.');
       }, [pendingAction, webAutomations, weather, speakResponse]);
 
       const startListening = useCallback(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-          speakResponse('Speech recognition is unsupported on this terminal.');
-          return;
-        }
+        if (!SpeechRecognition) return;
 
         if (recognitionRef.current) {
           try { recognitionRef.current.stop(); } catch (e) {}
@@ -412,7 +450,6 @@
         recognition.onstart = () => {
           setIsListening(true);
           setSystemStatus('LISTENING');
-          setTranscript('');
         };
 
         recognition.onresult = (e) => {
@@ -431,7 +468,7 @@
 
         recognitionRef.current = recognition;
         try { recognition.start(); } catch (e) {}
-      }, [handleVoiceCommand, speakResponse]);
+      }, [handleVoiceCommand]);
 
       const stopListening = useCallback(() => {
         setIsListening(false);
@@ -443,107 +480,130 @@
 
       const initializeJarvis = useCallback(() => {
         setSystemStatus('ONLINE & READY');
-        speakResponse("Welcome back, sir. Systems are all stable and operating at maximum efficiency.", () => {
+        speakResponse("Systems nominal.", () => {
           startListening();
         });
       }, [speakResponse, startListening]);
 
-      const addCustomAutomation = (e) => {
+      const addCustomDirective = (e) => {
         e.preventDefault();
-        if (!newKeyword.trim() || !newUrl.trim()) return;
-        let formattedUrl = newUrl.trim();
-        if (!formattedUrl.startsWith('http')) formattedUrl = 'https://' + formattedUrl;
-        setWebAutomations([...webAutomations, { keyword: newKeyword.trim().toLowerCase(), name: newKeyword.trim(), url: formattedUrl }]);
-        setNewKeyword('');
-        setNewUrl('');
+        if (!newDirective.trim()) return;
+        setDirectiveCommands([...directiveCommands, { label: newDirective.trim(), action: 'custom' }]);
+        setNewDirective('');
       };
 
-      const focusClass = systemMode === 'FOCUS';
-
       return (
-        <div className="min-h-screen w-full bg-obsidian text-slate-100 flex flex-col justify-between relative overflow-hidden p-6 md:p-10">
+        <div className="min-h-screen w-full bg-obsidian text-slate-100 flex flex-col justify-between relative overflow-hidden p-6 md:p-8">
           <div className="ambient-glow" />
 
-          <header className={`relative z-10 flex items-center justify-between pb-6 border-b border-slate-800/80 mb-8`}>
-            <div className="flex items-center gap-3.5">
-              <div className="relative w-8 h-8 flex items-center justify-center">
+          {/* Header */}
+          <header className="relative z-10 flex items-center justify-between pb-4 border-b border-slate-800/80 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="relative w-7 h-7 flex items-center justify-center">
                 <div className="absolute inset-0 rounded-full border-2 border-amberAccent/40 animate-ping" />
-                <div className="w-6 h-6 rounded-full border-2 border-amberAccent flex items-center justify-center bg-slate-900">
-                  <div className="w-2.5 h-2.5 rounded-full bg-amberAccent" />
+                <div className="w-5 h-5 rounded-full border-2 border-amberAccent flex items-center justify-center bg-slate-900">
+                  <div className="w-2 h-2 rounded-full bg-amberAccent" />
                 </div>
               </div>
-              <h1 className="font-brand text-2xl md:text-3xl font-bold tracking-widest text-brandWhite">HELIOS' JARVIS</h1>
+              <h1 className="font-brand text-xl md:text-2xl font-bold tracking-widest text-brandWhite">HELIOS' JARVIS</h1>
             </div>
 
-            <div className="flex items-center gap-6">
-              <div className="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-slate-300 bg-slate-900/80 border border-slate-700/60 flex items-center gap-2.5">
+            <div className="flex items-center gap-4">
+              <div className="flex bg-slate-900/90 rounded-lg p-1 border border-slate-800 text-xs font-semibold">
+                <button onClick={() => setSystemMode('STANDARD')} className={`px-3 py-1 rounded ${systemMode === 'STANDARD' ? 'bg-amberAccent text-obsidian' : 'text-slate-400'}`}>STANDARD</button>
+                <button onClick={() => setSystemMode('FOCUS')} className={`px-3 py-1 rounded ${systemMode === 'FOCUS' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>FOCUS</button>
+              </div>
+
+              <div className="px-3 py-1.5 rounded-full text-xs font-semibold tracking-wider text-slate-300 bg-slate-900/80 border border-slate-700/60 flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${isListening ? 'bg-amberAccent animate-ping' : 'bg-emerald-400'}`} />
                 {systemStatus}
               </div>
-              <div className="hidden lg:block font-mono text-sm font-semibold text-brandLightGrey bg-slate-900/90 px-4 py-1.5 rounded-xl border border-slate-800">
+
+              <div className="hidden lg:block font-mono text-xs font-semibold text-brandLightGrey bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800">
                 {time || '00:00:00'}
               </div>
             </div>
           </header>
 
-          <main className="relative z-10 grid grid-cols-12 gap-8 my-auto items-stretch">
+          {/* Main Content Layout */}
+          <main className="relative z-10 grid grid-cols-12 gap-6 my-auto items-stretch">
             
-            {/* Left Column */}
-            <div className="col-span-12 lg:col-span-3 flex flex-col justify-between gap-6">
-              <div className="glass-card rounded-2xl p-6 border-l-4 border-l-amberAccent">
-                <div className="text-[11px] font-brand uppercase tracking-widest text-brandGrey mb-2">TELEMETRY & TIME</div>
-                <div className="text-sm font-semibold text-brandLightGrey mb-1">{weather.location}</div>
-                <div className="text-3xl font-extrabold font-brand text-brandWhite tracking-wider">{time || '00:00:00'}</div>
+            {/* Left Column: Telemetry & Directive Commands */}
+            <div className="col-span-12 lg:col-span-3 flex flex-col justify-between gap-5">
+              <div className="glass-card rounded-2xl p-5 border-l-4 border-l-amberAccent">
+                <div className="text-[10px] font-brand uppercase tracking-widest text-brandGrey mb-1">TELEMETRY & TIME</div>
+                <div className="text-xs font-semibold text-brandLightGrey mb-1">{weather.location}</div>
+                <div className="text-2xl font-extrabold font-brand text-brandWhite">{time || '00:00:00'}</div>
               </div>
 
-              <div className="glass-card rounded-2xl p-6 border-l-4 border-l-amberAccent">
-                <div className="text-[11px] font-brand uppercase tracking-widest text-brandGrey mb-3">ENVIRONMENTAL FEED</div>
+              <div className="glass-card rounded-2xl p-5 border-l-4 border-l-amberAccent">
+                <div className="text-[10px] font-brand uppercase tracking-widest text-brandGrey mb-2">ENVIRONMENTAL FEED</div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-4xl font-black text-brandWhite">{weather.temp ?? '--'}°</div>
-                    <div className="text-xs text-brandGrey mt-1">{weather.condition}</div>
+                    <div className="text-3xl font-black text-brandWhite">{weather.temp ?? '--'}°</div>
+                    <div className="text-[11px] text-brandGrey mt-0.5">{weather.condition}</div>
                   </div>
-                  <div className="text-right border-l border-slate-800 pl-4">
-                    <div className="text-[10px] text-slate-500 uppercase tracking-wider">WIND</div>
-                    <div className="text-sm font-bold text-brandLightGrey">{weather.wind ?? '--'} km/h</div>
+                  <div className="text-right border-l border-slate-800 pl-3">
+                    <div className="text-[9px] text-slate-500 uppercase tracking-wider">WIND SPEED</div>
+                    <div className="text-xs font-bold text-brandLightGrey">{weather.wind ?? '--'} km/h</div>
                   </div>
                 </div>
               </div>
 
-              <div className="glass-card rounded-2xl p-6 flex-1 flex flex-col justify-between">
+              <div className="glass-card rounded-2xl p-5 flex-1 flex flex-col justify-between">
                 <div>
-                  <div className="text-[11px] font-brand uppercase tracking-widest text-brandGrey mb-4">VOICE COMMAND TIPS</div>
-                  <ul className="text-xs text-slate-300 space-y-2 font-mono">
-                    <li>• "Jarvis, open Gemini"</li>
-                    <li>• "What's the weather?"</li>
-                    <li>• "What time is it?"</li>
-                  </ul>
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="text-[10px] font-brand uppercase tracking-widest text-brandGrey">DIRECTIVE COMMANDS</div>
+                    <span className="text-[9px] text-slate-500 font-mono">CLICKABLE</span>
+                  </div>
+                  <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                    {directiveCommands.map((cmd, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => executeDirective(cmd)}
+                        className="w-full text-left bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 p-2.5 rounded-lg text-xs font-medium text-slate-200 transition flex items-center justify-between group"
+                      >
+                        <span>{cmd.label}</span>
+                        <span className="text-[10px] font-mono text-amberAccent opacity-0 group-hover:opacity-150 transition">EXEC</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
+                <form onSubmit={addCustomDirective} className="flex gap-2 mt-3 pt-3 border-t border-slate-800">
+                  <input
+                    type="text"
+                    placeholder="Add custom command..."
+                    value={newDirective}
+                    onChange={e => setNewDirective(e.target.value)}
+                    className="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-xs font-mono text-slate-200 outline-none"
+                  />
+                  <button type="submit" className="bg-amberAccent hover:bg-amber-600 text-obsidian px-3 rounded font-mono text-xs font-bold transition">+</button>
+                </form>
               </div>
             </div>
 
             {/* Center Core Column */}
-            <div className="col-span-12 lg:col-span-6 flex flex-col items-center justify-between gap-6 py-2">
-              <div className="w-full h-[420px] relative flex items-center justify-center">
+            <div className="col-span-12 lg:col-span-6 flex flex-col items-center justify-between gap-4 py-2">
+              <div className="w-full h-[380px] relative flex items-center justify-center">
                 <Jarvis3DCore isListening={isListening} isSpeaking={isSpeaking} audioLevel={audioLevel} currentMode={systemMode} />
               </div>
 
-              <div className="pt-4 flex flex-col items-center gap-4 w-full">
+              <div className="pt-2 flex flex-col items-center gap-3 w-full">
                 <button
                   onClick={isListening ? stopListening : initializeJarvis}
-                  className="core-btn px-10 py-4 rounded-full font-brand text-xs font-bold tracking-widest flex items-center gap-3.5 bg-amberAccent text-obsidian shadow-[0_0_30px_rgba(245,158,11,0.5)]"
+                  className="core-btn px-8 py-3.5 rounded-full font-brand text-xs font-bold tracking-widest flex items-center gap-3 bg-amberAccent text-obsidian shadow-[0_0_30px_rgba(245,158,11,0.4)]"
                 >
-                  <span className="w-3 h-3 rounded-full bg-obsidian animate-ping" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-obsidian animate-ping" />
                   {systemStatus === 'OFFLINE' ? "INITIALIZE HELIOS' JARVIS" : isListening ? "HALT VOICE INPUT" : "ACTIVATE VOICE LINK"}
                 </button>
 
-                <div className="w-full max-w-md glass-card rounded-2xl p-5 border-t-2 border-t-amberAccent min-h-[90px] flex flex-col justify-center">
-                  <div className="text-[10px] font-brand tracking-widest text-brandGrey mb-1.5 uppercase text-center">COMMUNICATION FEED</div>
+                <div className="w-full max-w-md glass-card rounded-2xl p-4 border-t-2 border-t-amberAccent min-h-[75px] flex flex-col justify-center">
+                  <div className="text-[9px] font-brand tracking-widest text-brandGrey mb-1 uppercase text-center">COMMUNICATION FEED</div>
                   <div className="text-xs font-mono text-brandWhite text-center">
                     {transcript ? `> ${transcript}` : <span className="text-slate-600">Awaiting voice command input…</span>}
                   </div>
                   {jarvisResponse && (
-                    <div className="text-[11px] font-mono mt-2 text-center text-amberAccent/90">
+                    <div className="text-[10px] font-mono mt-1 text-center text-amberAccent/90">
                       JARVIS: "{jarvisResponse}"
                     </div>
                   )}
@@ -551,11 +611,11 @@
               </div>
             </div>
 
-            {/* Right Column */}
-            <div className="col-span-12 lg:col-span-3 flex flex-col justify-between gap-6">
-              <div className="glass-card rounded-2xl p-6 border-l-4 border-l-amberAccent">
-                <div className="text-[11px] font-brand uppercase tracking-widest text-brandGrey mb-4">SYSTEM PERFORMANCE</div>
-                <div className="flex flex-col gap-4 font-mono text-xs">
+            {/* Right Column: System Performance & Web Automator */}
+            <div className="col-span-12 lg:col-span-3 flex flex-col justify-between gap-5">
+              <div className="glass-card rounded-2xl p-5 border-l-4 border-l-amberAccent">
+                <div className="text-[10px] font-brand uppercase tracking-widest text-brandGrey mb-3">SYSTEM PERFORMANCE</div>
+                <div className="flex flex-col gap-3 font-mono text-xs">
                   <div>
                     <div className="flex justify-between mb-1 text-slate-400"><span>CPU ALLOCATION</span><span>{cpuLoad}%</span></div>
                     <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800"><div className="h-full bg-amberAccent" style={{ width: `${cpuLoad}%` }} /></div>
@@ -567,27 +627,51 @@
                 </div>
               </div>
 
-              <div className="glass-card rounded-2xl p-6 flex-1 flex flex-col justify-between">
+              <div className="glass-card rounded-2xl p-5 flex-1 flex flex-col justify-between">
                 <div>
-                  <div className="text-[11px] font-brand uppercase tracking-widest text-brandGrey mb-3">AUTOMATED WEB LINKS</div>
-                  <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="text-[10px] font-brand uppercase tracking-widest text-brandGrey">WEB AUTOMATOR</div>
+                    <span className="text-[9px] text-slate-500 font-mono">VOICE/CLICK</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mb-3">Say "Open [keyword]" or click shortcuts below to launch instantly:</p>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
                     {webAutomations.map((item, idx) => (
-                      <div key={idx} className="bg-slate-900/60 border border-slate-800 p-2 rounded text-xs">
-                        <div className="font-bold text-slate-200">{item.name}</div>
-                        <div className="text-[10px] font-mono text-amber-400">say "{item.keyword}"</div>
-                      </div>
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setPendingAction(item);
+                          speakResponse(`Confirmation, open ${item.name}. Please say yes or no.`);
+                        }}
+                        className="text-left bg-slate-900/60 hover:bg-slate-800 border border-slate-800 p-2 rounded text-xs transition group"
+                      >
+                        <div className="font-bold text-slate-200 group-hover:text-amberAccent">{item.name}</div>
+                        <div className="text-[9px] font-mono text-slate-400">say "{item.keyword}"</div>
+                      </button>
                     ))}
                   </div>
                 </div>
-                <form onSubmit={addCustomAutomation} className="space-y-2 pt-2 border-t border-slate-800">
-                  <input type="text" placeholder="Name (e.g. Twitter)" value={newKeyword} onChange={e => setNewKeyword(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs font-mono text-slate-200 outline-none" />
-                  <input type="text" placeholder="URL (e.g. twitter.com)" value={newUrl} onChange={e => setNewUrl(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs font-mono text-slate-200 outline-none" />
-                  <button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-black font-mono text-xs py-1.5 rounded font-bold transition">+ ADD LINK</button>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!newKeyword.trim() || !newUrl.trim()) return;
+                  let formatted = newUrl.trim();
+                  if (!formatted.startsWith('http')) formatted = 'https://' + formatted;
+                  setWebAutomations([...webAutomations, { keyword: newKeyword.trim().toLowerCase(), name: newKeyword.trim(), url: formatted }]);
+                  setNewKeyword('');
+                  setNewUrl('');
+                }} className="space-y-2 pt-2 border-t border-slate-800">
+                  <input type="text" placeholder="Name (e.g. GitHub)" value={newKeyword} onChange={e => setNewKeyword(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs font-mono text-slate-200 outline-none" />
+                  <input type="text" placeholder="URL (e.g. github.com)" value={newUrl} onChange={e => setNewUrl(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs font-mono text-slate-200 outline-none" />
+                  <button type="submit" className="w-full bg-amberAccent hover:bg-amber-600 text-obsidian font-mono text-xs py-1.5 rounded font-bold transition">+ ADD SHORTCUT</button>
                 </form>
               </div>
             </div>
 
           </main>
+
+          <footer className="relative z-10 pt-4 mt-2 border-t border-slate-900 flex justify-between items-center text-[10px] font-mono text-slate-600">
+            <div>SECURE KERNEL v5.4.2 ACTIVE</div>
+            <div>HELIOS NEURAL MATRIX</div>
+          </footer>
         </div>
       );
     }
